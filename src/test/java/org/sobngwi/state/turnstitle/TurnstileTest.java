@@ -1,8 +1,11 @@
+package org.sobngwi.state.turnstitle;
+
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.sobngwi.state.turnstitle.TurnstitleFSMImpl;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -14,6 +17,7 @@ public class TurnstileTest {
 
     @Spy
     TurnstitleFSMImpl fsm;
+    InOrder inOrder;
 
     @Before
     public void setUp() {
@@ -23,6 +27,21 @@ public class TurnstileTest {
     private void assertActions(String expected){
         assertEquals(expected, fsm.getActions());
         assertThat(expected, is(equalTo(fsm.getActions())));
+    }
+
+    @Test
+    public void coinEventUnlockTheFSM() {
+
+
+        Mockito.doNothing().when(fsm).setState(any());
+        Mockito.doNothing().when(fsm).unlock();
+
+        fsm.coin();
+
+        inOrder = inOrder(fsm, fsm);
+        inOrder.verify(fsm).setState(any());
+        inOrder.verify(fsm).unlock();
+
     }
 
     @Test
@@ -37,6 +56,9 @@ public class TurnstileTest {
         verify(fsm, never()).alarm();
         verify(fsm, never()).thankyou();
 
+        inOrder = inOrder(fsm, fsm);
+        inOrder.verify(fsm).unlock();
+        inOrder.verify(fsm).lock();
     }
 
     @Test
@@ -72,6 +94,7 @@ public class TurnstileTest {
         verify(fsm, times(4)).thankyou();
         verify(fsm, never()).lock();
         verify(fsm, never()).alarm();
+        verifyThankyouCallSuccessively(4);
     }
 
     @Test
@@ -85,6 +108,15 @@ public class TurnstileTest {
         verify(fsm, times(1)).lock();
         verify(fsm, times(4)).thankyou();
         verify(fsm, never()).alarm();
+
+        verifyThankyouCallSuccessively(4);
+    }
+
+    private void verifyThankyouCallSuccessively(int howMany) {
+        inOrder = inOrder(fsm, fsm);
+        inOrder.verify(fsm).unlock();
+        for ( int i = 0 ; i < howMany ; i++)
+            inOrder.verify(fsm).thankyou();
     }
 
 }
